@@ -299,7 +299,7 @@ app.post("/pendingRequests",(req,res) => {
 
             PersonalModel.find({userId: { $in : [...pFrom,...pTo] }},{firstname:1,lastname:1,email:1,mobile:1,address:1},function(err, users) {
               if(users)
-                res.json({status:1,msg:"Data available",data:users,pendingFrom:pFrom,pendingTo:pTo});
+                res.json({status:1,msg:"Data available",data:users,pendingFrom:pFrom,pendingTo:pTo, requests});
                 else
                 res.json({status:1,msg:"No Data available"});
             })
