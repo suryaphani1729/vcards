@@ -21,5 +21,11 @@ const personalSchema = new mongoose.Schema({
   userId: {type:String}
 });
 
+const requestSchema = new mongoose.Schema({
+  fromId: {    type: String  },
+  toId: {    type: String  },
+  rDate: {    type: Date  },
+});
 
-module.exports = {connectDb,mongoose,userSchema, personalSchema} ;
+
+module.exports = {connectDb,mongoose,userSchema, personalSchema,requestSchema} ;
