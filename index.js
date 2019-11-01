@@ -14,10 +14,11 @@ app.use(bodyParser.urlencoded({ extended: true}));
 app.use(express.json({ extended: false }));
 
 
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 
 var UserModel = db.mongoose.model('profiles', db.userSchema);
-var PersonalModel = db.mongoose.model('personal',db.personalSchema)
+var PersonalModel = db.mongoose.model('personal',db.personalSchema);
+var RequestModel = db.mongoose.model('request',db.requestSchema);
 
 //user register
 app.post("/register",(req,res) => {
@@ -121,7 +122,7 @@ app.post("/updatePersonalInfo",(req,res) => {
 
 
      PersonalModel.findOne({userId:userId}, function(err, pm) {
-         console.log(pm);
+       
         if (pm == null){
             var PersonalInfo  = new PersonalModel({userId, firstname,lastname,email,mobile,address });
             PersonalInfo.save(function (err) {
@@ -164,7 +165,7 @@ app.post("/getFriendsInfo",(req,res) => {
     PersonalModel.findOne({ userId: userId }, function(err, user) {
     
      if(user){
-        console.log(user.friends);
+        
         PersonalModel.find({userId: { $in : user.friends }},{firstname:1,lastname:1,email:1,mobile:1,address:1},function(err, users) {
            
             res.json({status:1,msg:"Data available",data:users});
@@ -185,6 +186,134 @@ app.post("/getFriendsInfo",(req,res) => {
 
 
 });
+
+//Send Request
+app.post("/sendRequest",(req,res) => {
+
+    var reqData = req.body;
+    var userId=reqData.userId;
+    var emailId = reqData.emailId;
+
+  
+   
+
+    PersonalModel.findOne({ email: emailId }, function(err, user) {
+     
+     if(!user)
+          res.json({status:0,msg:"User Not Registered"});
+     else{
+
+        RequestModel.findOne({$or:[{ fromId: userId, toId:user.userId },{toId: userId, fromId:user.userId}]}, function(err, record) {
+                
+             if(record){
+                res.json({status:0,msg:"Requested/Received status is in pending"});
+             }else{
+                var Request  = new RequestModel({ fromId: userId, toId:user.userId, rDate: new Date() });
+                Request.save(function (err) {
+                       if(err)  res.json({status:0,msg:"Something went wrong"});
+                        res.json({status:1,msg:"Request sent Successfull"});
+                  });
+             }
+
+        });
+    }
+  });
+
+
+
+
+});
+
+//Accept Request
+app.post("/acceptRequest",(req,res) => {
+
+    var reqData = req.body;
+    var requestId=reqData.requestId;
+   
+
+    RequestModel.findById(requestId, function(err, user) {
+     
+     if(user){
+          
+        PersonalModel.findOne({userId: user.fromId},function(err, friend1){
+
+            if(friend1){
+
+                PersonalModel.findOne({userId: user.toId},function(err, friend2){
+
+                    if(friend2){
+        
+                      friend1.friends.push(user.toId);
+                      friend2.friends.push(user.fromId);
+                      friend1.save();
+                      friend2.save();
+                      RequestModel.findByIdAndRemove(requestId, function (err) {
+                        if (err) res.json({status:0,msg:"Something went wrong"});
+                        else
+                           res.json({status:1,msg:"Friend added successfully"});
+                      });
+
+                        
+                    }else{
+                        res.json({status:0,msg:"Something went wrong"});
+                    }
+        
+        
+                })
+
+
+
+            }else{
+                res.json({status:0,msg:"Something went wrong"});
+            }
+
+
+        })
+
+     }
+     else{
+
+        res.json({status:0,msg:"Request not Found"});
+    }
+  });
+
+
+
+
+});
+
+//Pending Request
+app.post("/pendingRequests",(req,res) => {
+
+    var reqData = req.body;
+    var userId=reqData.userId;
+   
+
+    RequestModel.find({$or:[{ fromId: userId },{toId: userId}]}, function(err, requests) {
+     
+        if(requests.length==0)
+             res.json({status:0,msg:"No Requests Found"});
+        else{
+            var pFrom = [], pTo = [];
+            requests.map((item)=> {item.fromId == userId ? pFrom.push(item.toId) : pTo.push(item.fromId);});
+
+            PersonalModel.find({userId: { $in : [...pFrom,...pTo] }},{firstname:1,lastname:1,email:1,mobile:1,address:1},function(err, users) {
+              if(users)
+                res.json({status:1,msg:"Data available",data:users,pendingFrom:pFrom,pendingTo:pTo});
+                else
+                res.json({status:1,msg:"No Data available"});
+            })
+
+          
+       }
+     });
+
+
+
+
+
+});
+
 
 
 db.connectDb().then(async () => {
