@@ -297,7 +297,7 @@ app.post("/pendingRequests",(req,res) => {
             var pFrom = [], pTo = [];
             requests.map((item)=> {item.fromId == userId ? pFrom.push(item.toId) : pTo.push(item.fromId);});
 
-            PersonalModel.find({userId: { $in : [...pFrom,...pTo] }},{firstname:1,lastname:1,email:1,mobile:1,address:1},function(err, users) {
+            PersonalModel.find({userId: { $in : [...pFrom,...pTo] }},{userId:1,firstname:1,lastname:1,email:1,mobile:1,address:1},function(err, users) {
               if(users)
                 res.json({status:1,msg:"Data available",data:users,pendingFrom:pFrom,pendingTo:pTo, requests});
                 else
