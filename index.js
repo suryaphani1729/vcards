@@ -281,6 +281,23 @@ app.post("/acceptRequest",(req,res) => {
 
 
 });
+//Cancel Request
+app.post("/cancelRequest",(req,res) => {
+
+    var reqData = req.body;
+    var requestId=reqData.requestId;
+   
+
+      RequestModel.findByIdAndRemove(requestId, function (err) {
+                        if (err) res.json({status:0,msg:"Something went wrong"});
+                        else
+                           res.json({status:1,msg:"Request Cancelled Successfully"});
+                      });
+
+
+
+
+});
 
 //Pending Request
 app.post("/pendingRequests",(req,res) => {
